@@ -6,21 +6,11 @@ PhantomGuard is a stealthy, autonomous system that detects and responds to threa
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (3 Steps!)
 
-### 1. **Setup**
+### 1. **Install Dependencies**
 
 ```bash
-# Clone or download the repository
-cd phantomguard
-
-# Run the automated setup script
-chmod +x setup_and_test.sh
-./setup_and_test.sh
-
-# Or manual setup:
-python3 -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
@@ -30,39 +20,41 @@ pip install -r requirements.txt
 # Copy the example config
 cp config.json.example config.json
 
-# Edit config.json and add your Telegram credentials:
-# - Get a bot token from @BotFather on Telegram
-# - Get your chat ID from @userinfobot
-nano config.json  # or use your favorite editor
+# Edit config.json (required: add Telegram credentials)
+nano config.json
 ```
 
-### 3. **Generate Decoys**
+Get Telegram credentials:
+- **Bot Token**: Message @BotFather on Telegram
+- **Chat ID**: Message @userinfobot on Telegram
+
+### 3. **Start Everything with ONE Command**
 
 ```bash
-# Create realistic decoy files
-python3 phantomgen/decoy_engine.py --config config.json
+python start.py
 ```
 
-### 4. **Run the System**
+That's it! 🎉
 
-```bash
-# Start PhantomGuard (main detection system)
-python3 phantomguard.py
+**What happens:**
+- ✅ Validates configuration
+- ✅ Creates necessary directories
+- ✅ Generates decoy files automatically
+- ✅ Starts PhantomGuard core detection system
+- ✅ Launches Streamlit dashboard at http://localhost:8501
 
-# In another terminal, start the dashboard
-streamlit run ui/dashboard.py
-```
-
-### 5. **Test It**
+### 4. **Test It**
 
 ```bash
 # In another terminal, simulate attacks
-python3 demo/attack_simulator.py
+python demo/attack_simulator.py
 
 # Or manually trigger alerts
 cat /tmp/.ssh/id_rsa
 cat /tmp/.env
 ```
+
+**Stop everything:** Press `Ctrl+C` in the terminal running `start.py`
 
 ---
 
