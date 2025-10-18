@@ -1,0 +1,5 @@
+*.pyc
+*.pyc
+/processor
+*.pyc
+processor/__pycache__/event_scorer.cpython-313.pyc
