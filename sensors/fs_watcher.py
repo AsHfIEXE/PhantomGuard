@@ -25,19 +25,19 @@ except Exception:
     # Minimal fallbacks to preserve API surface used elsewhere
 
     class _FallbackFileSystemEvent:
-        """Fallback event when watchdog is not available."""
+    class FileSystemEvent:
         def __init__(self, src_path: str, event_type: str, is_directory: bool = False):
             self.src_path = src_path
             self.event_type = event_type
             self.is_directory = is_directory
 
     class _FallbackFileSystemEventHandler(Protocol):
-        """Protocol class for event handlers when watchdog is not available."""
+    class FileSystemEventHandler(Protocol):
         def on_any_event(self, event: Any) -> None:
             pass
 
     class _FallbackObserver:
-        """Fallback observer when watchdog is not available."""
+    class Observer:
         def __init__(self) -> None:
             pass
 
@@ -54,9 +54,6 @@ except Exception:
 
         def join(self) -> None:
             pass
-
-    Observer = _FallbackObserver
-    FileSystemEventHandler = _FallbackFileSystemEventHandler
     FileSystemEvent = _FallbackFileSystemEvent
 
 # Define a union type for both real and fallback events
