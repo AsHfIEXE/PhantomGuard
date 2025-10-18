@@ -1,5 +1,52 @@
+# Python
 *.pyc
-*.pyc
-/processor
-*.pyc
-processor/__pycache__/event_scorer.cpython-313.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+/var/log/phantomguard/
+
+# Config (sensitive)
+config.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PhantomGuard specific
+/processor/__pycache__/
+ui/fp_state.json
+ui/labels.jsonl

@@ -1,110 +1,186 @@
 """
 PhantomGuard Configuration Validator
-Validates configuration files with detailed error reporting.
+Validates config.json and provides helpful error messages.
 """
-import json
 from pathlib import Path
-from typing import Dict, Any, List, Tuple
+from typing import List, Dict, Any
+import re
 
 
 class ConfigValidator:
-    """Validates PhantomGuard configuration with detailed error reporting."""
+    """Validates PhantomGuard configuration files."""
+    
+    @staticmethod
+    def validate(config: Dict[str, Any]) -> List[str]:
+        """
+        Validate configuration and return list of errors.
+        
+        Args:
+            config: Configuration dictionary
+            
+        Returns:
+            List of error messages (empty if valid)
+        """
+        errors = []
+        
+        # Check required top-level keys
+        required_keys = ['watcher', 'scorer', 'telegram', 'blocker']
+        for key in required_keys:
+            if key not in config:
+                errors.append(f"❌ Missing required section: '{key}'")
+        
+        # Validate watcher configuration
+        if 'watcher' in config:
+            watcher_errors = ConfigValidator._validate_watcher(config['watcher'])
+            errors.extend(watcher_errors)
+        
+        # Validate scorer configuration
+        if 'scorer' in config:
+            scorer_errors = ConfigValidator._validate_scorer(config['scorer'])
+            errors.extend(scorer_errors)
+        
+        # Validate Telegram configuration
+        if 'telegram' in config:
+            telegram_errors = ConfigValidator._validate_telegram(config['telegram'])
+            errors.extend(telegram_errors)
+        
+        # Validate blocker configuration
+        if 'blocker' in config:
+            blocker_errors = ConfigValidator._validate_blocker(config['blocker'])
+            errors.extend(blocker_errors)
+        
+        return errors
+    
+    @staticmethod
+    def _validate_watcher(watcher: Dict[str, Any]) -> List[str]:
+        """Validate watcher configuration."""
+        errors = []
+        
+        if 'paths' not in watcher:
+            errors.append("❌ watcher.paths is required")
+            return errors
+        
+        paths = watcher['paths']
+        if not isinstance(paths, list) or len(paths) == 0:
+            errors.append("❌ watcher.paths must be a non-empty list")
+            return errors
+        
+        # Check if paths exist or can be created
+        for path in paths:
+            p = Path(path)
+            parent = p.parent if not p.exists() else p
+            
+            if not parent.exists():
+                try:
+                    parent.mkdir(parents=True, exist_ok=True)
+                    print(f"✓ Created directory: {parent}")
+                except PermissionError:
+                    errors.append(f"❌ Cannot create directory: {parent} (permission denied)")
+                except Exception as e:
+                    errors.append(f"❌ Cannot create directory: {parent} ({e})")
+        
+        return errors
+    
+    @staticmethod
+    def _validate_scorer(scorer: Dict[str, Any]) -> List[str]:
+        """Validate scorer configuration."""
+        errors = []
+        
+        if 'threshold' not in scorer:
+            errors.append("⚠️  scorer.threshold not set (will use default)")
+        elif not isinstance(scorer['threshold'], int):
+            errors.append("❌ scorer.threshold must be an integer")
+        elif scorer['threshold'] < 0 or scorer['threshold'] > 200:
+            errors.append("⚠️  scorer.threshold should be between 0 and 200")
+        
+        if 'rules' not in scorer:
+            errors.append("❌ scorer.rules is required")
+            return errors
+        
+        rules = scorer['rules']
+        if not isinstance(rules, list) or len(rules) == 0:
+            errors.append("❌ scorer.rules must be a non-empty list")
+            return errors
+        
+        # Validate each rule
+        for i, rule in enumerate(rules):
+            if 'name' not in rule:
+                errors.append(f"❌ scorer.rules[{i}] missing 'name'")
+            if 'weight' not in rule:
+                errors.append(f"❌ scorer.rules[{i}] missing 'weight'")
+            elif not isinstance(rule['weight'], int):
+                errors.append(f"❌ scorer.rules[{i}].weight must be an integer")
+            if 'pattern' not in rule:
+                errors.append(f"❌ scorer.rules[{i}] missing 'pattern'")
+            else:
+                # Validate regex pattern
+                try:
+                    re.compile(rule['pattern'])
+                except re.error as e:
+                    errors.append(f"❌ scorer.rules[{i}].pattern is invalid regex: {e}")
+        
+        return errors
+    
+    @staticmethod
+    def _validate_telegram(telegram: Dict[str, Any]) -> List[str]:
+        """Validate Telegram configuration."""
+        errors = []
+        
+        if 'bot_token' not in telegram:
+            errors.append("❌ telegram.bot_token is required")
+        elif telegram['bot_token'] in ['YOUR_TELEGRAM_BOT_TOKEN', '', None]:
+            errors.append("❌ telegram.bot_token not configured (get from @BotFather)")
+        elif not telegram['bot_token'].count(':') == 1:
+            errors.append("⚠️  telegram.bot_token format looks invalid (should be 'NUMBER:STRING')")
+        
+        if 'chat_id' not in telegram:
+            errors.append("❌ telegram.chat_id is required")
+        elif telegram['chat_id'] in ['YOUR_TELEGRAM_CHAT_ID', '', None]:
+            errors.append("❌ telegram.chat_id not configured (get from @userinfobot)")
+        
+        if 'hmac_key' not in telegram:
+            errors.append("❌ telegram.hmac_key is required")
+        elif len(telegram['hmac_key']) < 32:
+            errors.append("❌ telegram.hmac_key must be at least 32 characters for security")
+        elif telegram['hmac_key'] in ['a-very-secret-hmac-key-change-me', 'change-this-to-a-secret-key-min-32-chars']:
+            errors.append("❌ telegram.hmac_key must be changed from default value")
+        
+        return errors
+    
+    @staticmethod
+    def _validate_blocker(blocker: Dict[str, Any]) -> List[str]:
+        """Validate blocker configuration."""
+        errors = []
+        
+        if 'dry_run' not in blocker:
+            errors.append("⚠️  blocker.dry_run not set (will use default: true)")
+        elif not isinstance(blocker['dry_run'], bool):
+            errors.append("❌ blocker.dry_run must be a boolean (true/false)")
+        elif blocker['dry_run'] is False:
+            errors.append("⚠️  blocker.dry_run is disabled - REAL IP BLOCKING IS ACTIVE!")
+        
+        return errors
     
     @staticmethod
     def validate_and_print(config: Dict[str, Any]) -> bool:
         """
-        Validate configuration and print results.
-        Returns True if valid, False otherwise.
+        Validate config and print results. Returns True if valid.
+        
+        Args:
+            config: Configuration dictionary
+            
+        Returns:
+            True if configuration is valid, False otherwise
         """
-        valid = True
-        errors: List[str] = []
-        warnings: List[str] = []
+        errors = ConfigValidator.validate(config)
         
-        def add_error(msg: str):
-            nonlocal valid
-            valid = False
-            errors.append(msg)
-            
-        def add_warning(msg: str):
-            warnings.append(msg)
+        if not errors:
+            print("✅ Configuration is valid!")
+            return True
         
-        # Required sections
-        required_sections = ['watcher', 'scorer', 'telegram', 'blocker']
-        for section in required_sections:
-            if section not in config:
-                add_error(f"Missing required section: {section}")
-                continue
+        print("❌ Configuration validation failed:\n")
+        for error in errors:
+            print(f"  {error}")
         
-        # Watcher config
-        if 'watcher' in config:
-            w = config['watcher']
-            if not isinstance(w.get('paths', []), list):
-                add_error("watcher.paths must be a list")
-            else:
-                for path in w.get('paths', []):
-                    parent = Path(path).parent
-                    if not parent.exists():
-                        add_warning(f"Watch path parent does not exist: {parent}")
-        
-        # Scorer config
-        if 'scorer' in config:
-            s = config['scorer']
-            if 'threshold' not in s:
-                add_error("scorer.threshold is required")
-            elif not isinstance(s['threshold'], (int, float)):
-                add_error("scorer.threshold must be a number")
-            elif s['threshold'] < 0 or s['threshold'] > 100:
-                add_error("scorer.threshold must be between 0 and 100")
-                
-            if 'rules' not in s:
-                add_error("scorer.rules is required")
-            elif not isinstance(s['rules'], list):
-                add_error("scorer.rules must be a list")
-            else:
-                for i, rule in enumerate(s['rules']):
-                    if not isinstance(rule, dict):
-                        add_error(f"Rule {i} must be an object")
-                        continue
-                    for field in ['name', 'weight', 'pattern']:
-                        if field not in rule:
-                            add_error(f"Rule {i} missing required field: {field}")
-        
-        # Telegram config
-        if 'telegram' in config:
-            t = config['telegram']
-            for field in ['bot_token', 'chat_id', 'hmac_key']:
-                if field not in t:
-                    add_error(f"telegram.{field} is required")
-                elif not t[field] or t[field] in ['YOUR_TOKEN', 'YOUR_CHAT_ID']:
-                    add_warning(f"telegram.{field} appears to be a placeholder")
-            
-            if 'hmac_key' in t and len(t['hmac_key']) < 32:
-                add_error("telegram.hmac_key must be at least 32 characters")
-        
-        # Blocker config
-        if 'blocker' in config:
-            b = config['blocker']
-            if 'enabled' not in b:
-                add_error("blocker.enabled is required")
-            if 'dry_run' not in b:
-                add_error("blocker.dry_run is required")
-            if not b.get('dry_run', True):
-                add_warning("⚠️ IP blocker is in ACTIVE mode (not dry-run)")
-            if 'whitelist' in b and not isinstance(b['whitelist'], list):
-                add_error("blocker.whitelist must be a list")
-        
-        # Print results
-        if errors:
-            print("\n❌ Configuration Errors:")
-            for error in errors:
-                print(f"  • {error}")
-        
-        if warnings:
-            print("\n⚠️ Configuration Warnings:")
-            for warning in warnings:
-                print(f"  • {warning}")
-        
-        if valid:
-            print("\n✅ Configuration validation passed")
-        
-        return valid
+        print("\n💡 Fix these issues in config.json before starting PhantomGuard.")
+        return False
