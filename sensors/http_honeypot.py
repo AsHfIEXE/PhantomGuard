@@ -1,8 +1,5 @@
-"""
-PhantomGuard HTTP Honeypot
-Minimal aiohttp server that logs all requests as events.
-"""
 import asyncio
+import time
 from aiohttp import web
 from typing import Callable
 
@@ -18,7 +15,7 @@ class EventLogger:
             'method': request.method,
             'headers': dict(request.headers),
             'remote': request.remote,
-            'ts': request.time_service.now(),
+            'ts': time.time(),  # Fixed: use time.time() instead of request.time_service
         }
         self.emit(event)
         return web.Response(text='OK')
@@ -33,5 +30,9 @@ async def run_honeypot(emit: Callable, port: int = 8080):
     site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
     print(f"[HTTP Honeypot] Listening on port {port}")
-    while True:
-        await asyncio.sleep(3600)
+    # Keep the server running
+    try:
+        while True:
+            await asyncio.sleep(3600)
+    except asyncio.CancelledError:
+        await runner.cleanup()
