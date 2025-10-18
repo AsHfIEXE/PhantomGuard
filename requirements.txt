@@ -2,8 +2,8 @@ watchdog
 streamlit
 requests
 pytest
-
-# Optional / recommended for full features
+flask
+flask-cors
 scikit-learn
 torch
 python-telegram-bot
