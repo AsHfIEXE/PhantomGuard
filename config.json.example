@@ -1,0 +1,38 @@
+{
+  "watcher": {
+    "paths": [
+      "/tmp/.ssh",
+      "/tmp/.decoy-home/user/.config",
+      "/opt/backups/db.sql.gz",
+      "/etc/phantomguard/tokens.env"
+    ]
+  },
+  "scorer": {
+    "threshold": 50,
+    "rules": [
+      {
+        "name": "read_ssh_key",
+        "weight": 80,
+        "pattern": "\\.ssh/id_rsa"
+      },
+      {
+        "name": "read_secret_file",
+        "weight": 60,
+        "pattern": "tokens\\.env|\\.config"
+      },
+      {
+        "name": "access_backup",
+        "weight": 40,
+        "pattern": "db\\.sql"
+      }
+    ]
+  },
+  "telegram": {
+    "bot_token": "YOUR_TELEGRAM_BOT_TOKEN",
+    "chat_id": "YOUR_TELEGRAM_CHAT_ID",
+    "hmac_key": "a-very-secret-hmac-key-change-me"
+  },
+  "blocker": {
+    "dry_run": true
+  }
+}

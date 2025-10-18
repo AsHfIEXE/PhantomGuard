@@ -1,0 +1,14 @@
+[Unit]
+Description=PhantomGuard deception sensor
+After=network.target
+
+[Service]
+Type=simple
+User=phantom
+Group=phantom
+WorkingDirectory=/opt/phantomguard
+ExecStart=/opt/phantomguard/venv/bin/python -u phantomguard.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

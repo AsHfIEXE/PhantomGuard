@@ -1,0 +1,11 @@
+watchdog
+streamlit
+requests
+pytest
+
+# Optional / recommended for full features
+scikit-learn
+torch
+python-telegram-bot
+aiohttp
+joblib
